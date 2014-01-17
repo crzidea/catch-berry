@@ -33,14 +33,25 @@ monsterImage.onload = function () {
 };
 monsterImage.src = "images/monster.png";
 
+// Monster image
+var trapReady = false;
+var trapImage = new Image();
+trapImage.onload = function () {
+	trapReady = true;
+};
+trapImage.src = "images/trap.png";
+
 // Game objects
 var hero = {
 	x: canvasCenter.x,
 	y: canvasCenter.y,
+	turningX: false,
+	turningY: false,
 	speed: 256 // movement in pixels per second
 };
 var monster = {};
 var monstersCaught = 0;
+var trap = {};
 
 // handel movement
 var vector = {
@@ -68,75 +79,87 @@ addEventListener("keydown", function (e) {
 	}
 }, false);
 
-addEventListener("keyup", function (e) {
-	// delete keysDown[e.keyCode];
-	// switch (e.keyCode) {
-	// case 37: // left
-	// case 39: // right
-	// 	vector.x = 0;
-	// 	break
-	// case 38: // up
-	// case 40: // down
-	// 	vector.y = 0;
-	// 	break
-	// }
-}, false);
-
 // Add touch device support
 canvas.addEventListener('touchstart', function (e) {
 	var touch = e.touches[0];
-	var vector = {
-		x: touch.clientX,
-		y: touch.clientY
+	vector = {
+		x: touch.clientX > hero.x ? 1 : -1,
+		y: touch.clientY > hero.y ? 1 : -1
 	};
-	console.log(touch);
 })
-canvas.addEventListener('touchend', function (e) {
-	console.log(e);
-})
+// canvas.addEventListener('touchend', function (e) {
+// 	console.log(e);
+// })
 
 
 // Reset the game when the player catches a monster
 var reset = function () {
-	// hero.x = canvas.width / 2;
-	// hero.y = canvas.height / 2;
 
 	// Throw the monster somewhere on the screen randomly
-	monster.x = 32 + (Math.random() * (canvas.width - 64));
-	monster.y = 32 + (Math.random() * (canvas.height - 64));
+	monster.x = 64 + (Math.random() * (canvas.width - 160));
+	monster.y = 64 + (Math.random() * (canvas.height - 160));
+
+	if (checkCollision(monster)) {
+		return reset();
+	}
+
+	// Get trap position
+	/**
+	 * x:     y:
+	 * 0 0 0  0 1 2
+	 * 1   1  0   2
+	 * 2 2 2  0 1 2
+	 */
+	do {
+		var posX = Math.floor(Math.random() * 3);
+		var posY = Math.floor(Math.random() * 3);
+	} while (posX == posY && 1 == posX)
+
+	trap.x = monster.x + 32 * (posX - 1);
+	trap.y = monster.y + 32 * (posY - 1);
+
+	if (checkCollision(trap)) {
+		return reset();
+	}
+
 };
+
+var checkCollision = function (thing) {
+	return hero.x <= (thing.x + 32) &&
+		thing.x <= (hero.x + 32) &&
+		hero.y <= (thing.y + 32) &&
+		thing.y <= (hero.y + 32)
+}
 
 // Update game objects
 var update = function (modifier) {
-	// if (38 in keysDown) { // Player holding up
-	// 	hero.y -= hero.speed * modifier;
-	// }
-	// if (40 in keysDown) { // Player holding down
-	// 	hero.y += hero.speed * modifier;
-	// }
-	// if (37 in keysDown) { // Player holding left
-	// 	hero.x -= hero.speed * modifier;
-	// }
-	// if (39 in keysDown) { // Player holding right
-	// 	hero.x += hero.speed * modifier;
-	// }
 	hero.x += vector.x * hero.speed * modifier;
 	hero.y += vector.y * hero.speed * modifier;
 
 	// Are they touching?
-	if (
-		hero.x <= (monster.x + 32) && monster.x <= (hero.x + 32) && hero.y <= (monster.y + 32) && monster.y <= (hero.y + 32)
-	) {
+	if (checkCollision(monster)) {
 		++monstersCaught;
 		reset();
 	}
 
-	// Are we out?
-	if (hero.x >= canvas.width - heroImage.width || hero.x <= 0) {
-		vector.x = 0 - vector.x;
+	if (checkCollision(trap)) {
+		hero.x = canvasCenter.x;
+		hero.y = canvasCenter.y;
+		vector.x = vector.y = 0;
 	}
-	if (hero.y >= canvas.height - heroImage.height || hero.y <= 0) {
+
+	// Are we out?
+	if (!hero.turningX && hero.x >= canvas.width - 32 || hero.x <= 0) {
+		vector.x = 0 - vector.x;
+		hero.turningX = true;
+	} else {
+		hero.turningX = false;
+	}
+	if (!hero.turningY && hero.y >= canvas.height - 32 || hero.y <= 0) {
 		vector.y = 0 - vector.y;
+		hero.turningY = true;
+	} else {
+		hero.turningY = false;
 	}
 
 };
@@ -153,6 +176,10 @@ var render = function () {
 
 	if (monsterReady) {
 		ctx.drawImage(monsterImage, monster.x, monster.y);
+	}
+
+	if (trapReady) {
+		ctx.drawImage(trapImage, trap.x, trap.y);
 	}
 
 	// Score
