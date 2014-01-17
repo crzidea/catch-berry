@@ -9,6 +9,7 @@ var canvasCenter = {
 }
 document.body.appendChild(canvas);
 
+var edge = 32;
 // Background image
 var bgReady = false;
 var bgImage = new Image();
@@ -115,8 +116,8 @@ var reset = function () {
 		var posY = Math.floor(Math.random() * 3);
 	} while (posX == posY && 1 == posX)
 
-	trap.x = monster.x + 32 * (posX - 1);
-	trap.y = monster.y + 32 * (posY - 1);
+	trap.x = monster.x + edge * (posX - 1);
+	trap.y = monster.y + edge * (posY - 1);
 
 	if (checkCollision(trap)) {
 		return reset();
@@ -125,10 +126,10 @@ var reset = function () {
 };
 
 var checkCollision = function (thing) {
-	return hero.x <= (thing.x + 32) &&
-		thing.x <= (hero.x + 32) &&
-		hero.y <= (thing.y + 32) &&
-		thing.y <= (hero.y + 32)
+	return hero.x <= (thing.x + edge) &&
+		thing.x <= (hero.x + edge) &&
+		hero.y <= (thing.y + edge) &&
+		thing.y <= (hero.y + edge)
 }
 
 // Update game objects
@@ -150,13 +151,13 @@ var update = function (modifier) {
 	}
 
 	// Are we out?
-	if (!hero.turningX && hero.x >= canvas.width - 32 || hero.x <= 0) {
+	if (!hero.turningX && hero.x >= canvas.width - edge || hero.x <= 0) {
 		vector.x = 0 - vector.x;
 		hero.turningX = true;
 	} else {
 		hero.turningX = false;
 	}
-	if (!hero.turningY && hero.y >= canvas.height - 32 || hero.y <= 0) {
+	if (!hero.turningY && hero.y >= canvas.height - edge || hero.y <= 0) {
 		vector.y = 0 - vector.y;
 		hero.turningY = true;
 	} else {
@@ -188,7 +189,7 @@ var render = function () {
 	ctx.font = "24px Helvetica";
 	ctx.textAlign = "left";
 	ctx.textBaseline = "top";
-	ctx.fillText("Goblins caught: " + monstersCaught, 32, 32);
+	ctx.fillText("Goblins caught: " + monstersCaught, edge, edge);
 };
 
 // The main game loop
