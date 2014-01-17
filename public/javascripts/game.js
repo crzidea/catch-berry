@@ -88,7 +88,7 @@ canvas.addEventListener('touchstart', function (e) {
 	};
 })
 // canvas.addEventListener('touchend', function (e) {
-// 	console.log(e);
+//   console.log(e);
 // })
 
 
@@ -146,6 +146,7 @@ var update = function (modifier) {
 		hero.x = canvasCenter.x;
 		hero.y = canvasCenter.y;
 		vector.x = vector.y = 0;
+		reset();
 	}
 
 	// Are we out?
