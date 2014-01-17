@@ -1,0 +1,14 @@
+{
+  "redis": {
+    "port": "",
+    "host": "",
+    "pass": ""
+  },
+  "channel": {
+    "port": "",
+    "host": "",
+    "pass": ""
+  },
+  "keyPrefix": "pic:",
+  "maxRecentPics": 3
+}
