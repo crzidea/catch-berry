@@ -151,13 +151,13 @@ var update = function (modifier) {
 	}
 
 	// Are we out?
-	if (!hero.turningX && hero.x >= canvas.width - edge || hero.x <= 0) {
+	if (!hero.turningX && hero.x >= canvas.width - edge * 2 || hero.x <= edge) {
 		vector.x = 0 - vector.x;
 		hero.turningX = true;
 	} else {
 		hero.turningX = false;
 	}
-	if (!hero.turningY && hero.y >= canvas.height - edge || hero.y <= 0) {
+	if (!hero.turningY && hero.y >= canvas.height - edge * 2 || hero.y <= edge) {
 		vector.y = 0 - vector.y;
 		hero.turningY = true;
 	} else {

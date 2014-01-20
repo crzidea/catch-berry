@@ -1,5 +1,4 @@
-var formidable = require('formidable'),
-  redis = require('redis'),
+var redis = require('redis'),
   config = require('../config');
 
 var idKey = config.keyPrefix + 'id',
@@ -15,65 +14,15 @@ channelClient.auth(config.channel.pass);
   })
 })
 
-var pictures = {};
+var session = {};
+session.start = function (req, res) {}
 
-/**
- * LRANGE pic:recent 0 -1
- * picIds.forEach; GET pic:[id]
- */
-pictures.list = function (req, res) {
-  redisClient.lrange(recentKey, 0, -1, function (err, ids) {
-    var recentPics = [];
-    ids.forEach(function (id) {
-      redisClient.get(config.keyPrefix + id, function (err, file) {
-        recentPics.push({
-          file: file
-        });
-        if (recentPics.length == ids.length)
-          res.json(recentPics);
-      })
-    })
-  })
-};
+var score = {};
+score.list = function (req, res) {}
+score.scored = function (req, res) {}
+score.get = function (req, res) {}
+score.clear = function (req, res) {}
 
 
-/**
- * INCR pic:id
- * SET pic:[id] [url]
- * channel.lpush('pic', [url])
- * LPUSH pic:recent [id]
- * while reply-- > 10; RPOP pic:recent
- */
-pictures.upload = function (req, res) {
-  var form = new formidable.IncomingForm()
-  form.uploadDir = 'uploads';
-  form.keepExtensions = true;
-
-  form.parse(req, function (err, fields, files) {
-    try {
-      
-      var file = files.picture.path.match(/^uploads\/(.*)/).pop();
-      channelClient.lpush('picture', file, function (err, reply) {
-        res.json({
-          success: true
-        })
-      });
-
-      redisClient.incr(idKey, function (err, id) {
-        redisClient.set(config.keyPrefix + id, file,
-          function (err, reply) {}
-        );
-        redisClient.lpush(recentKey, id, function (err, length) {
-          while (length-- > config.maxRecentPics)
-            redisClient.rpop(recentKey, function (err, reply) {})
-        });
-      })
-
-    } catch (e) {
-      console.log(e);
-    }
-  });
-
-};
-
-exports.pictures = pictures;
+exports.session = session;
+exports.score = score
