@@ -2,13 +2,14 @@
   "redis": {
     "port": "",
     "host": "",
-    "pass": ""
+    "pass": "",
+    "ttl": 3600
   },
   "channel": {
     "port": "",
     "host": "",
     "pass": ""
   },
-  "keyPrefix": "pic:",
+  "keyPrefix": "goblin:",
   "maxRecentPics": 3
 }

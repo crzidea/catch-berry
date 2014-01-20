@@ -3,9 +3,12 @@
  */
 var express = require('express');
 var ejsMiddleware = require('ejs-middleware');
-var routes = require('./routes');
 var http = require('http');
 var path = require('path');
+var routes = require('./routes');
+var config = require('./config');
+
+var RedisStore = require('connect-redis')(express);
 
 var app = express();
 
@@ -16,17 +19,20 @@ app.use(express.logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded());
 app.use(express.methodOverride());
+app.use(express.cookieParser());
+app.use(express.session({
+  store: new RedisStore(config.redis),
+  secret: 'mysecret'
+}));
 app.use(app.router);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'uploads')));
 app.use(ejsMiddleware(path.join(__dirname, 'views')));
 
-app.post('/session', routes.session.start);
-app.get('/score', routes.score.list);
-app.get('/score/:id', routes.score.scored);
-app.del('/score', routes.score.clear);
-app.post('/score/:id', routes.score.get);
-
+app.post('/api/session', routes.session.start);
+app.post('/api/score', routes.score.get);
+app.get('/api/score', routes.score.list);
+app.del('/api/score', routes.score.clear);
 
 http.createServer(app).listen(app.get('port'), function () {
   console.log('Express server listening on port ' + app.get('port'));

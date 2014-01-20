@@ -15,13 +15,97 @@ channelClient.auth(config.channel.pass);
 })
 
 var session = {};
-session.start = function (req, res) {}
+
+/**
+ * POST /session
+ * req.body.name(String)
+ */
+session.start = function (req, res) {
+  var name = req.body.name || req.session.name;
+  if (!name) {
+    res.json({
+      code: 1,
+      message: 'Name is required'
+    });
+    return
+  }
+
+  var key = config.keyPrefix + req.body.name
+  console.log(req.body.name, req.session.name);
+  if (req.body.name == req.session.name) {
+    redisClient.get(key, function (err, score) {
+      res.json({
+        score: Number(score)
+      });
+    })
+    return
+  }
+
+  redisClient.get(key, function (err, score) {
+    if (score !== null) {
+      res.json({
+        code: 2,
+        message: 'Name was used'
+      });
+    } else {
+      redisClient.setex(key, config.redis.ttl, 0)
+      req.session.name = name;
+      res.json({
+        score: 0
+      })
+    }
+  })
+}
+
 
 var score = {};
-score.list = function (req, res) {}
-score.scored = function (req, res) {}
-score.get = function (req, res) {}
-score.clear = function (req, res) {}
+var nameReg = RegExp('^' + config.keyPrefix + '(.*)');
+var allExp = config.keyPrefix + '*';
+score.list = function (req, res) {
+  redisClient.keys(allExp, function (err, keys) {
+    if (!keys.length) {
+      res.json([]);
+      return
+    }
+
+    var scoreList = [];
+    keys.forEach(function (k) {
+      redisClient.get(k, function (err, score) {
+        scoreList.push({
+          name: k.match(nameReg).pop(),
+          score: score
+        });
+        if (scoreList.length == keys.length) {
+          res.json(scoreList);
+        }
+      })
+    })
+  })
+}
+score.get = function (req, res) {
+  if (!req.session.name) {
+    res.json({
+      code: 1,
+      message: 'Login required'
+    });
+    return
+  }
+  var key = config.keyPrefix + req.session.name;
+  redisClient.incr(key, function (err, score) {
+    res.json({
+      score: score
+    });
+  })
+  redisClient.expire(key, config.redis.ttl);
+}
+score.clear = function (req, res) {
+  redisClient.keys(allExp, function (err, keys) {
+    keys.forEach(function (k) {
+      redisClient.del(k);
+    });
+  });
+  res.json(0);
+}
 
 
 exports.session = session;

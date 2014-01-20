@@ -10,6 +10,7 @@
     "ejs-middleware": "0.0.3",
     "ejs": "~0.8.5",
     "redis": "~0.10.0",
-    "formidable": "~1.0.14"
+    "formidable": "~1.0.14",
+    "connect-redis": "~1.4.6"
   }
 }
