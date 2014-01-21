@@ -7,7 +7,7 @@ var idKey = config.keyPrefix + 'id',
 var redisClient = redis.createClient(config.redis.port, config.redis.host);
 var channelClient = redis.createClient(config.channel.port, config.channel.host);
 redisClient.auth(config.redis.pass);
-channelClient.auth(config.channel.pass);
+channelClient.auth(config.channel.appSecret);
 [redisClient, channelClient].forEach(function (client) {
   client.on('error', function (err) {
     console.log(err);
@@ -90,10 +90,20 @@ score.get = function (req, res) {
   }
   var key = config.keyPrefix + req.session.name;
   redisClient.incr(key, function (err, score) {
+    channelClient.lpush(
+      config.channel.topic,
+      JSON.stringify({
+        name: req.session.name,
+        score: score
+      }),
+      function (err, reply) {
+        console.log(err, reply);
+      }
+    );
     res.json({
       score: score
     });
-  })
+  });
   redisClient.expire(key, config.redis.ttl);
 }
 score.clear = function (req, res) {

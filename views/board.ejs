@@ -1,14 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Catch Goblins</title>
-    <!-- // <script type="text/javascript" src="/lib/angular/angular.min.js"></script> -->
-    <!-- // <script type="text/javascript" src="/lib/angular-resource/angular-resource.min.js"></script> -->
-    <!-- // <script type="text/javascript" src="/lib/jquery/jquery.min.js"></script> -->
-    <!-- // <script type="text/javascript" src="/javascripts/app.js"></script> -->
-  </head>
-  <body>
-    <script src="javascripts/game.js"></script>
-  </body>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Backbone.js Todos</title>
+  <link rel="stylesheet" href="/stylesheets/board.css">
+  <script src="/lib/angular/angular.min.js"></script>
+  <script src="/lib/angular-resource/angular-resource.min.js"></script>
+  <script src="/javascripts/board.js"></script>
+  <script src="http://channel.cdn.sohusce.com/channel.min.js"></script>
+</head>
+
+<body screen_capture_injected="true">
+
+  <div id="todoapp">
+
+    <header>
+      <h1>Scoreboard</h1>
+      <input id="new-todo" type="text" placeholder="What needs to be done?">
+    </header>
+
+    <section id="main" style="display: block;">
+      <input id="toggle-all" type="checkbox">
+      <label for="toggle-all">Mark all as complete</label>
+    <ul id="todo-list">
+      <li>
+    <div class="view">
+      <input class="toggle" type="checkbox">
+      <label>lixin</label>
+      <!-- <a class="destroy"></a> -->
+    </div>
+    <input class="edit" type="text" value="lixin">
+      </li>
+      <li>
+    <div class="view">
+      <input class="toggle" type="checkbox">
+      <label>zhongyu</label>
+      <!-- <a class="destroy"></a> -->
+    </div>
+    <input class="edit" type="text" value="zhongyu">
+      </li>
+    </ul>
+    </section>
+
+    <footer style="display: block;">
+    
+    <div class="todo-count"><b>2</b> items left</div>
+  </footer>
+
+  </div>
+
+  <div id="instructions">
+    Double-click to edit a todo.
+  </div>
+
+  <div id="credits">
+    Created by
+    <br>
+    <a href="http://jgn.me/">Jérôme Gravel-Niquet</a>.
+    <br>Rewritten by: <a href="http://addyosmani.github.com/todomvc">TodoMVC</a>.
+  </div>
+
+<div class="vimiumReset vimiumHUD" style="right: 150px; opacity: 0; display: none;"></div>
+</body>
 </html>
