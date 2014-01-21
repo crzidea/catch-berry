@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html ng-app="app">
 <head>
   <meta charset="utf-8">
   <title>Backbone.js Todos</title>
@@ -12,7 +12,7 @@
 
 <body screen_capture_injected="true">
 
-  <div id="todoapp">
+  <div id="todoapp" ng-controller="BoardCtrl">
 
     <header>
       <h1>Scoreboard</h1>
@@ -23,22 +23,15 @@
       <input id="toggle-all" type="checkbox">
       <label for="toggle-all">Mark all as complete</label>
     <ul id="todo-list">
-      <li>
-    <div class="view">
-      <input class="toggle" type="checkbox">
-      <label>lixin</label>
-      <!-- <a class="destroy"></a> -->
-    </div>
-    <input class="edit" type="text" value="lixin">
-      </li>
-      <li>
-    <div class="view">
-      <input class="toggle" type="checkbox">
-      <label>zhongyu</label>
-      <!-- <a class="destroy"></a> -->
-    </div>
-    <input class="edit" type="text" value="zhongyu">
-      </li>
+    <li ng-repeat="player in list">
+      <div class="view">
+        <input class="toggle" type="checkbox">
+        <label>{{player.name}}</label>
+        <label>Goblins caught: {{player.score}}</label>
+        <!-- <a class="destroy"></a> -->
+      </div>
+      <input class="edit" type="text" value="lixin">
+    </li>
     </ul>
     </section>
 
