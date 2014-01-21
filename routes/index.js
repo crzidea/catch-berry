@@ -22,6 +22,7 @@ var session = {};
  */
 session.start = function (req, res) {
   var name = req.body.name || req.session.name;
+  console.log(name);
   if (!name) {
     res.json({
       code: 1,
@@ -30,23 +31,19 @@ session.start = function (req, res) {
     return
   }
 
-  var key = config.keyPrefix + req.body.name
-  console.log(req.body.name, req.session.name);
-  if (req.body.name == req.session.name) {
-    redisClient.get(key, function (err, score) {
-      res.json({
-        score: Number(score)
-      });
-    })
-    return
-  }
-
+  var key = config.keyPrefix + name
   redisClient.get(key, function (err, score) {
     if (score !== null) {
-      res.json({
-        code: 2,
-        message: 'Name was used'
-      });
+      if (!req.body.name) {
+        res.json({
+          score: Number(score)
+        });
+      } else {
+        res.json({
+          code: 2,
+          message: 'Name was used'
+        });
+      }
     } else {
       redisClient.setex(key, config.redis.ttl, 0)
       req.session.name = name;

@@ -51,10 +51,22 @@ var hero = {
 	speed: 256 // movement in pixels per second
 };
 var monster = {};
-var monstersCaught = 0;
 var trap = {};
 
-// handel movement
+var monstersCaught = 0;
+var xhr = new XMLHttpRequest;
+xhr.onload = function () {
+	try {
+		monstersCaught = JSON.parse(xhr.response).score;
+	} catch (e) {
+		console.log(e);
+	};
+}
+xhr.open('post', '/api/session', true);
+xhr.send();
+
+
+// Movement
 var vector = {
 	x: 0,
 	y: 0
@@ -83,9 +95,10 @@ addEventListener("keydown", function (e) {
 // Add touch device support
 canvas.addEventListener('touchstart', function (e) {
 	var touch = e.touches[0];
+	var canvas = document.getElementsByTagName('canvas')[0];
 	vector = {
-		x: touch.clientX > hero.x ? 1 : -1,
-		y: touch.clientY > hero.y ? 1 : -1
+		x: touch.pageX - canvas.offsetTop > hero.x ? 1 : -1,
+		y: touch.pageY - canvas.offsetLeft > hero.y ? 1 : -1
 	};
 })
 // canvas.addEventListener('touchend', function (e) {
@@ -125,6 +138,12 @@ var reset = function () {
 
 };
 
+
+var score = function () {
+	xhr.open('post', '/api/score', true);
+	xhr.send();
+}
+
 var checkCollision = function (thing) {
 	return hero.x <= (thing.x + edge) &&
 		thing.x <= (hero.x + edge) &&
@@ -139,7 +158,7 @@ var update = function (modifier) {
 
 	// Are they touching?
 	if (checkCollision(monster)) {
-		++monstersCaught;
+		score();
 		reset();
 	}
 
@@ -151,17 +170,15 @@ var update = function (modifier) {
 	}
 
 	// Are we out?
-	if (!hero.turningX && hero.x >= canvas.width - edge * 2 || hero.x <= edge) {
-		vector.x = 0 - vector.x;
-		hero.turningX = true;
-	} else {
-		hero.turningX = false;
+	if (hero.x + edge * 2 >= canvas.width) {
+		vector.x = -1;
+	} else if (hero.x - edge <= 0) {
+		vector.x = 1;
 	}
-	if (!hero.turningY && hero.y >= canvas.height - edge * 2 || hero.y <= edge) {
-		vector.y = 0 - vector.y;
-		hero.turningY = true;
-	} else {
-		hero.turningY = false;
+	if (hero.y + edge * 2 >= canvas.height) {
+		vector.y = -1;
+	} else if (hero.y - edge <= 0) {
+		vector.y = 1;
 	}
 
 };
@@ -209,4 +226,3 @@ reset();
 var then = Date.now();
 // setInterval(main, 1); // Execute as fast as possible
 main();
-
