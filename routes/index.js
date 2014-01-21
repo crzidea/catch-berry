@@ -35,6 +35,7 @@ session.start = function (req, res) {
   redisClient.get(key, function (err, score) {
     if (score !== null) {
       if (!req.body.name) {
+        // name == req.session.name
         res.json({
           score: Number(score)
         });
