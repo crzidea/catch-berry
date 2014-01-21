@@ -22,7 +22,7 @@ var session = {};
  */
 session.start = function (req, res) {
   var name = req.body.name || req.session.name;
-  console.log(name);
+  console.log(req.body);
   if (!name) {
     res.json({
       code: 1,
