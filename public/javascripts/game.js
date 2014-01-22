@@ -225,4 +225,17 @@ function game(monstersCaught) {
 	var then = Date.now();
 	// setInterval(main, 1); // Execute as fast as possible
 	main();
+
+
+	// use channel
+	var channel = new Channel({
+		topics: "top3",
+		token: "2f4c18981031211e262d4667633cc3d7",
+		timestamp: "1390291727884",
+		appid: "1da52hlqpj"
+	});
+	channel.onmessage = function (msg) {
+		var top3 = JSON.parse(msg.data);
+		console.log(top3);
+	}
 }

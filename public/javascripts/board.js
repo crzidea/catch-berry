@@ -21,12 +21,15 @@ angular.module('app', ['ngResource'])
         var player = JSON.parse(msg.data);
         // force a $digest
         $scope.$apply(function () {
+          var isNew = true;
           for (var i = 0; i < $scope.list.length; i++) {
             if ($scope.list[i].name == player.name) {
+              isNew = false;
               $scope.list[i].score = player.score;
               break
             }
           };
+          isNew && $scope.list.push(player);
           $scope.list = $scope.list.sort(function (a, b) {
             return b.score - a.score;
           })

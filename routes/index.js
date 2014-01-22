@@ -1,8 +1,7 @@
 var redis = require('redis'),
   config = require('../config');
 
-var idKey = config.keyPrefix + 'id',
-  recentKey = config.keyPrefix + 'recent';
+var keyPlayers = config.keyPrefix + 'player';
 
 var redisClient = redis.createClient(config.redis.port, config.redis.host);
 var channelClient = redis.createClient(config.channel.port, config.channel.host);
@@ -22,7 +21,6 @@ var session = {};
  */
 session.start = function (req, res) {
   var name = req.body.name || req.session.name;
-  console.log(req.body);
   if (!name) {
     res.json({
       code: 1,
@@ -31,8 +29,7 @@ session.start = function (req, res) {
     return
   }
 
-  var key = config.keyPrefix + name
-  redisClient.get(key, function (err, score) {
+  redisClient.zscore(keyPlayers, name, function (err, score) {
     if (score !== null) {
       if (!req.body.name) {
         // name == req.session.name
@@ -46,7 +43,7 @@ session.start = function (req, res) {
         });
       }
     } else {
-      redisClient.setex(key, config.redis.ttl, 0)
+      redisClient.zadd(keyPlayers, 0, name);
       req.session.name = name;
       res.json({
         score: 0
@@ -59,25 +56,39 @@ session.start = function (req, res) {
 var score = {};
 var nameReg = RegExp('^' + config.keyPrefix + '(.*)');
 var allExp = config.keyPrefix + '*';
-score.list = function (req, res) {
-  redisClient.keys(allExp, function (err, keys) {
-    if (!keys.length) {
-      res.json([]);
-      return
-    }
 
-    var scoreList = [];
-    keys.forEach(function (k) {
-      redisClient.get(k, function (err, score) {
-        scoreList.push({
-          name: k.match(nameReg).pop(),
-          score: score
+function getTopPlayers(num, cb) {
+  redisClient.zrevrange(keyPlayers, 0, num - 1, function (err, names) {
+    try {
+      var indexInit = names.indexOf('init');
+      if (~indexInit)
+        names.splice(indexInit, 1);
+    } catch (e) {
+      console.log(e);
+    }
+    if (!names.length) {
+      cb([]);
+    } else {
+      var scoreList = [];
+      names.forEach(function (name) {
+        redisClient.zscore(keyPlayers, name, function (err, score) {
+          scoreList.push({
+            name: name,
+            score: score
+          });
+          if (scoreList.length == names.length) {
+            cb(scoreList);
+          }
         });
-        if (scoreList.length == keys.length) {
-          res.json(scoreList);
-        }
       })
-    })
+    }
+  })
+}
+
+
+score.list = function (req, res) {
+  getTopPlayers(0, function (list) {
+    res.json(list);
   })
 }
 score.get = function (req, res) {
@@ -88,8 +99,10 @@ score.get = function (req, res) {
     });
     return
   }
-  var key = config.keyPrefix + req.session.name;
-  redisClient.incr(key, function (err, score) {
+  redisClient.zincrby(keyPlayers, 1, req.session.name, function (err, score) {
+    res.json({
+      score: score
+    });
     channelClient.lpush(
       config.channel.topic,
       JSON.stringify({
@@ -100,18 +113,25 @@ score.get = function (req, res) {
         console.log(err, reply);
       }
     );
-    res.json({
-      score: score
-    });
-  });
-  redisClient.expire(key, config.redis.ttl);
+
+    // broadcast top3
+    getTopPlayers(3, function (list) {
+      channelClient.lpush('top3', JSON.stringify(list));
+    })
+  })
 }
+
+score.top3 = function (req, res) {
+
+}
+
+/**
+ * Clear a ZSET and expire it after config.redis.ttl
+ */
 score.clear = function (req, res) {
-  redisClient.keys(allExp, function (err, keys) {
-    keys.forEach(function (k) {
-      redisClient.del(k);
-    });
-  });
+  redisClient.del(keyPlayers);
+  redisClient.zadd(keyPlayers, -1, 'init');
+  redisClient.expire(keyPlayers, config.redis.ttl);
   res.json(0);
 }
 
