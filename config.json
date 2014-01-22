@@ -8,7 +8,9 @@
   "channel": {
     "port": "",
     "host": "",
-    "pass": ""
+    "appId": "",
+    "appSecret": "",
+    "topic": "score"
   },
   "keyPrefix": "goblin:",
   "maxRecentPics": 3
