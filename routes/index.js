@@ -70,8 +70,9 @@ function getTopPlayers(num, cb) {
       cb([]);
     } else {
       var scoreList = [];
+      var multi = redisClient.multi();
       names.forEach(function (name) {
-        redisClient.zscore(keyPlayers, name, function (err, score) {
+        multi.zscore(keyPlayers, name, function (err, score) {
           scoreList.push({
             name: name,
             score: score
@@ -81,6 +82,7 @@ function getTopPlayers(num, cb) {
           }
         });
       })
+      multi.exec();
     }
   })
 }
@@ -129,9 +131,11 @@ score.top3 = function (req, res) {
  * Clear a ZSET and expire it after config.redis.ttl
  */
 score.clear = function (req, res) {
-  redisClient.del(keyPlayers);
-  redisClient.zadd(keyPlayers, -1, 'init');
-  redisClient.expire(keyPlayers, config.redis.ttl);
+  redisClient.multi()
+    .del(keyPlayers)
+    .zadd(keyPlayers, -1, 'init')
+    .expire(keyPlayers, config.redis.ttl)
+    .exec();
   res.json(0);
 }
 
