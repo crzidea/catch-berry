@@ -8,6 +8,10 @@ angular.module('app', ['ngResource'])
         return b.score - a.score;
       });
     });
+    $scope.delete = function () {
+      Score.delete();
+      $scope.list = [];
+    }
 
     angular.element(document).ready(function () {
       var channel = new Channel({
