@@ -15,7 +15,7 @@ xhr.onload = function () {
       }));
     }
   } else {
-    game(res.score);
+    game(res);
   }
 }
 xhr.open('post', '/api/session', true);

@@ -1,5 +1,6 @@
-var redis = require('redis'),
-  config = require('../config');
+var redis = require('redis');
+var crypto = require('crypto');
+var config = require('../config');
 
 var keyPlayers = config.keyPrefix + 'player';
 
@@ -22,33 +23,40 @@ var session = {};
 session.start = function (req, res) {
   var name = req.body.name || req.session.name;
   if (!name) {
-    res.json({
+    return res.json({
       code: 1,
       message: 'Name is required'
     });
-    return
   }
-
   redisClient.zscore(keyPlayers, name, function (err, score) {
-    if (score !== null) {
-      if (!req.body.name) {
-        // name == req.session.name
-        res.json({
-          score: Number(score)
-        });
-      } else {
-        res.json({
-          code: 2,
-          message: 'Name was used'
-        });
-      }
+    if (score !== null && req.body.name) {
+      // name == req.session.name
+      return res.json({
+        code: 2,
+        message: 'Name was used'
+      });
     } else {
       redisClient.zadd(keyPlayers, 0, name);
       req.session.name = name;
-      res.json({
-        score: 0
-      })
     }
+
+    var chOpts = {
+      appid: config.channel.appId,
+      timestamp: Date.now(),
+      topics: 'top3'
+    }
+    chOpts.token = crypto.createHash('md5')
+      .update([
+        config.channel.appSecret,
+        chOpts.timestamp,
+        chOpts.topics
+      ].join(':'))
+      .digest('hex');
+
+    res.json({
+      chOpts: chOpts,
+      score: parseInt(score)
+    });
   })
 }
 
@@ -58,42 +66,27 @@ var nameReg = RegExp('^' + config.keyPrefix + '(.*)');
 var allExp = config.keyPrefix + '*';
 
 function getTopPlayers(num, cb) {
-  redisClient.zrevrange(keyPlayers, 0, num - 1, function (err, names) {
-    try {
-      var indexInit = names.indexOf('init');
-      if (~indexInit)
-        names.splice(indexInit, 1);
-    } catch (e) {
-      console.log(e);
-    }
-    if (!names.length) {
-      cb([]);
-    } else {
-      var scoreList = [];
-      var multi = redisClient.multi();
-      names.forEach(function (name) {
-        multi.zscore(keyPlayers, name, function (err, score) {
-          scoreList.push({
-            name: name,
-            score: score
-          });
-          if (scoreList.length == names.length) {
-            cb(scoreList);
-          }
+  redisClient.zrevrangebyscore(keyPlayers, '+inf', '-inf',
+    'withscores', 'limit', 0, num, function (err, replies) {
+      var players = [];
+      while (replies.length) {
+        players.push({
+          name: replies.shift(),
+          score: replies.shift()
         });
-      })
-      multi.exec();
+      }
+      cb(players);
     }
-  })
+  );
 }
 
 
 score.list = function (req, res) {
-  getTopPlayers(0, function (list) {
+  getTopPlayers(-1, function (list) {
     res.json(list);
   })
 }
-score.get = function (req, res) {
+score.incr = function (req, res) {
   if (!req.session.name) {
     res.json({
       code: 1,
@@ -101,30 +94,25 @@ score.get = function (req, res) {
     });
     return
   }
-  redisClient.zincrby(keyPlayers, 1, req.session.name, function (err, score) {
-    res.json({
-      score: score
-    });
-    channelClient.lpush(
-      config.channel.topic,
-      JSON.stringify({
-        name: req.session.name,
+  redisClient.zincrby(keyPlayers, 1, req.session.name,
+    function (err, score) {
+      res.json({
         score: score
-      }),
-      function (err, reply) {
-        console.log(err, reply);
-      }
-    );
+      });
+      channelClient.lpush(
+        'score',
+        JSON.stringify({
+          name: req.session.name,
+          score: score
+        })
+      );
 
-    // broadcast top3
-    getTopPlayers(3, function (list) {
-      channelClient.lpush('top3', JSON.stringify(list));
-    })
-  })
-}
-
-score.top3 = function (req, res) {
-
+      // broadcast top3
+      getTopPlayers(3, function (list) {
+        channelClient.lpush('top3', JSON.stringify(list));
+      })
+    }
+  )
 }
 
 /**
@@ -133,7 +121,6 @@ score.top3 = function (req, res) {
 score.clear = function (req, res) {
   redisClient.multi()
     .del(keyPlayers)
-    .zadd(keyPlayers, -1, 'init')
     .expire(keyPlayers, config.redis.ttl)
     .exec();
   res.json(0);

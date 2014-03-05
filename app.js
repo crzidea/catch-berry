@@ -26,11 +26,10 @@ app.use(express.session({
 }));
 app.use(app.router);
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'uploads')));
 app.use(ejsMiddleware(path.join(__dirname, 'views')));
 
 app.post('/api/session', routes.session.start);
-app.post('/api/score', routes.score.get);
+app.post('/api/score', routes.score.incr);
 app.get('/api/score', routes.score.list);
 app.del('/api/score', routes.score.clear);
 

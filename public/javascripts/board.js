@@ -16,9 +16,9 @@ angular.module('app', ['ngResource'])
     angular.element(document).ready(function () {
       var channel = new Channel({
         topics: "score",
-        token: "1ae7251784b3a77167795ca08a7fcd2f",
+        token: "ac6878e2bbf1686a6dc03b86d985c406",
         timestamp: "1390291727884",
-        appid: "1da52hlqpj"
+        appid: "1ddc4hwpuq"
       });
       channel.onmessage = function (msg) {
 

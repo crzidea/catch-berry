@@ -1,6 +1,5 @@
-function game(monstersCaught) {
-	console.log(monstersCaught);
-	monstersCaught = monstersCaught || 0;
+function game(res) {
+	var monstersCaught = res.score || 0;
 	// Create the canvas
 	var canvas = document.createElement("canvas");
 	var ctx = canvas.getContext("2d");
@@ -228,12 +227,7 @@ function game(monstersCaught) {
 
 
 	// use channel
-	var channel = new Channel({
-		topics: "top3",
-		token: "2f4c18981031211e262d4667633cc3d7",
-		timestamp: "1390291727884",
-		appid: "1da52hlqpj"
-	});
+	var channel = new Channel(res.chOpts);
 	channel.onmessage = function (msg) {
 		var top3 = JSON.parse(msg.data);
 		console.log(top3);
