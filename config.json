@@ -9,9 +9,7 @@
     "port": "",
     "host": "",
     "appId": "",
-    "appSecret": "",
-    "topic": "score"
+    "appSecret": ""
   },
-  "keyPrefix": "goblin:",
-  "maxRecentPics": 3
+  "keyPrefix": "goblin:"
 }
