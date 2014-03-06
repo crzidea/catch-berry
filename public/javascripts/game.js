@@ -115,8 +115,8 @@ function game(res) {
 			return reset();
 		}
 
-		// Get trap position
 		/**
+		 * Get trap position
 		 * x:     y:
 		 * 0 0 0  0 1 2
 		 * 1   1  0   2
@@ -232,4 +232,5 @@ function game(res) {
 		var top3 = JSON.parse(msg.data);
 		console.log(top3);
 	}
+  document.createElement();
 }

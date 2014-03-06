@@ -43,7 +43,7 @@ session.start = function (req, res) {
     var chOpts = {
       appid: config.channel.appId,
       timestamp: Date.now(),
-      topics: 'top3'
+      topics: 'rank,chat'
     }
     chOpts.token = crypto.createHash('md5')
       .update([
@@ -108,8 +108,8 @@ score.incr = function (req, res) {
       );
 
       // broadcast top3
-      getTopPlayers(3, function (list) {
-        channelClient.lpush('top3', JSON.stringify(list));
+      getTopPlayers(config.numRank, function (list) {
+        channelClient.lpush('rank', JSON.stringify(list));
       })
     }
   )
@@ -126,6 +126,20 @@ score.clear = function (req, res) {
   res.json(0);
 }
 
+var chat = function (req, res) {
+  channelClient.lpush('chat',
+    JSON.stringify({
+      name: req.session.name,
+      msg: req.body.msg
+    }),
+    function (err, reply) {
+      res.json({
+        code: 0
+      });
+    }
+  )
+}
 
 exports.session = session;
-exports.score = score
+exports.score = score;
+exports.chat = chat;
