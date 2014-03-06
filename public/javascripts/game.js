@@ -241,5 +241,4 @@ function game(res) {
     var top3 = JSON.parse(msg.data);
     console.log(top3);
   }
-  document.createElement();
 }
