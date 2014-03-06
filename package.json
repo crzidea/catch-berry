@@ -12,5 +12,9 @@
     "redis": "~0.10.0",
     "formidable": "~1.0.14",
     "connect-redis": "~1.4.6"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.2",
+    "grunt-contrib-watch": "^0.5.3"
   }
 }

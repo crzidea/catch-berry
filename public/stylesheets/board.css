@@ -37,7 +37,8 @@ body {
 	padding: 0 0 10px 0;
 }
 
-#todoapp input[type="text"] {
+#todoapp input#clear {
+  background: #fff;
 	width: 466px;
 	font-size: 24px;
 	font-family: inherit;
