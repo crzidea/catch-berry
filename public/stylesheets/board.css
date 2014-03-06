@@ -210,3 +210,9 @@ body {
 #credits a {
 	color: #888;
 }
+
+.msg {
+  padding:10px;
+  border:1px solid black;
+}
+

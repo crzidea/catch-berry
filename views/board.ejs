@@ -8,7 +8,7 @@
   <script src="/lib/angular-resource/angular-resource.min.js"></script>
   <script src="/javascripts/board.js"></script>
   <script src="http://channel.cdn.sohusce.com/channel.min.js"></script>
-  <!--<script src="//10.2.25.187:35729/livereload.js"></script>-->
+  <script src="//10.2.25.187:35729/livereload.js"></script>
 </head>
 
 <body screen_capture_injected="true">
@@ -26,6 +26,7 @@
       <div class="view">
         <label>{{player.name}}</label>
         <label>caught {{player.score}} goblins</label>
+        <label class="msg" ng-show="!!player.msg">{{player.msg}}</label>
         <!-- <a class="destroy"></a> -->
       </div>
       <input class="edit" type="text" value="lixin">
