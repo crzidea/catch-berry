@@ -33,6 +33,7 @@ app.post('/api/score', routes.score.incr);
 app.get('/api/score', routes.score.list);
 app.del('/api/score', routes.score.clear);
 app.post('/api/chat', routes.chat);
+app.get('/api/score/rank', routes.score.rank);
 
 http.createServer(app).listen(app.get('port'), function () {
   console.log('Express server listening on port ' + app.get('port'));

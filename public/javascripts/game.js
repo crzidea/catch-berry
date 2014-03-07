@@ -1,5 +1,7 @@
 function game(res) {
-  var monstersCaught = res.score || 0;
+  var playerName = res.name;
+  var playerScore = res.score || 0;
+  var playerRank = res.rank;
   // Create the canvas
   var canvas = document.createElement("canvas");
   var ctx = canvas.getContext("2d");
@@ -64,7 +66,9 @@ function game(res) {
   var xhr = new XMLHttpRequest;
   xhr.onload = function () {
     try {
-      monstersCaught = JSON.parse(xhr.response).score;
+      var obj = JSON.parse(xhr.response);
+      playerScore = obj.score;
+      playerRank = obj.rank;
     } catch (e) {
       console.log(e);
     };
@@ -212,7 +216,8 @@ function game(res) {
     ctx.font = "24px Helvetica";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-    ctx.fillText("Score: " + monstersCaught, edge, edge);
+    ctx.fillText("Score: " + playerScore, edge, edge);
+    playerRank && ctx.fillText("Rank: " + playerRank, edge, edge * 2);
     // Top 3 players
     var rankTop = edge;
     top3.forEach(function (player, rank) {
@@ -229,10 +234,19 @@ function game(res) {
     // Chat message
     if (chatMsgAlpha > 0) {
       ctx.fillStyle = "rgba(210, 210, 210, " + chatMsgAlpha + ")";
+      ctx.textAlign = "left";
       ctx.font = "italic 24px Arial";
-      // ctx.fillText(chatMsg, edge, canvas.width * 2 - edge * 2);
       ctx.fillText(chatMsg, edge, canvas.height - edge * 3);
       chatMsgAlpha -= 0.2 * modifier; // decrease opacity (fade out)
+    }
+
+    // player's rank changed
+    if (surpassedByAlpha > 0) {
+      ctx.fillStyle = "rgba(210, 210, 210, " + surpassedByAlpha + ")";
+      ctx.font = "italic 24px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText(surpassedBy, canvas.width / 2, canvas.height - edge * 4);
+      surpassedByAlpha -= 0.1 * modifier; // decrease opacity (fade out)
     }
   };
 
@@ -255,6 +269,17 @@ function game(res) {
   var chatMsg = '';
   var chatMsgAlpha = 0;
   var top3 = [];
+  var surpassedBy;
+  var surpassedByAlpha = 0;;
+  var xhrRank = new XMLHttpRequest;
+  xhrRank.onload = function () {
+    try {
+      playerRank = xhrRank.response;
+      console.log(playerRank);
+    } catch (e) {
+      console.log(e);
+    };
+  }
   // use channel
   var channel = new Channel(res.chOpts);
   channel.onmessage = function (msg) {
@@ -266,6 +291,16 @@ function game(res) {
       break
     case 'rank':
       top3 = obj;
+      break
+    case 'rankChanged':
+      console.log(obj.rank, playerRank);
+      if (obj.rank == playerRank && obj.name != playerName) {
+        console.log(obj);
+        surpassedBy = 'You were surpassed by ' + obj.name;
+        surpassedByAlpha = 1;
+        xhrRank.open('get', '/api/score/rank', true);
+        xhrRank.send();
+      }
       break
     }
   }

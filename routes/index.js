@@ -1,4 +1,5 @@
 var redis = require('redis');
+var async = require('async');
 var crypto = require('crypto');
 var config = require('../config');
 
@@ -28,35 +29,61 @@ session.start = function (req, res) {
       message: 'Name is required'
     });
   }
-  redisClient.zscore(keyPlayers, name, function (err, score) {
-    if (score !== null && req.body.name) {
-      // name == req.session.name
-      return res.json({
+  async.waterfall([
+
+    function (cb) {
+      redisClient.zscore(keyPlayers, name, function (err, score) {
+        if (score !== null) {
+          if (req.body.name) {
+            // name == req.session.name
+            return cb(Error('Name was used'));
+          }
+        } else {
+          redisClient.zadd(keyPlayers, 0, name);
+          req.session.name = name;
+        }
+        cb(err, score);
+      })
+    },
+    function (score, cb) {
+      redisClient.multi()
+        .zcard(keyPlayers)
+        .zrank(keyPlayers, name)
+        .exec(
+          function (err, replies) {
+            var rank = replies[0] - replies[1];
+            req.session.rank = rank;
+            var chOpts = {
+              appid: config.channel.appId,
+              timestamp: Date.now(),
+              topics: 'chat,rank,rankChanged'
+            }
+            chOpts.token = crypto.createHash('md5')
+              .update([
+                config.channel.appSecret,
+                chOpts.timestamp,
+                chOpts.topics
+              ].join(':'))
+              .digest('hex');
+            cb(err, {
+              chOpts: chOpts,
+              name: req.session.name,
+              score: parseInt(score),
+              rank: parseInt(rank)
+            });
+          }
+      )
+    }
+
+  ], function (err, results) {
+    if (err) {
+      res.json({
         code: 2,
-        message: 'Name was used'
-      });
+        message: err.message
+      })
     } else {
-      redisClient.zadd(keyPlayers, 0, name);
-      req.session.name = name;
+      res.json(results);
     }
-
-    var chOpts = {
-      appid: config.channel.appId,
-      timestamp: Date.now(),
-      topics: 'rank,chat'
-    }
-    chOpts.token = crypto.createHash('md5')
-      .update([
-        config.channel.appSecret,
-        chOpts.timestamp,
-        chOpts.topics
-      ].join(':'))
-      .digest('hex');
-
-    res.json({
-      chOpts: chOpts,
-      score: parseInt(score)
-    });
   })
 }
 
@@ -88,31 +115,46 @@ score.list = function (req, res) {
 }
 score.incr = function (req, res) {
   if (!req.session.name) {
-    res.json({
+    return res.json({
       code: 1,
       message: 'Login required'
     });
-    return
   }
-  redisClient.zincrby(keyPlayers, 1, req.session.name,
-    function (err, score) {
-      res.json({
-        score: score
-      });
-      channelClient.lpush(
-        'score',
-        JSON.stringify({
-          name: req.session.name,
-          score: score
-        })
-      );
-
-      // broadcast top3
-      getTopPlayers(config.numRank, function (list) {
-        channelClient.lpush('rank', JSON.stringify(list));
-      })
-    }
-  )
+  redisClient.multi()
+    .zincrby(keyPlayers, 1, req.session.name)
+    .zcard(keyPlayers)
+    .zrank(keyPlayers, req.session.name)
+    .exec(
+      function (err, replies) {
+        var score = replies[0];
+        var rank = replies[1] - replies[2];
+        if (rank != req.session.rank) {
+          console.log(req.session.name, req.session.rank, rank);
+          req.session.rank = rank;
+          channelClient.lpush('rankChanged', JSON.stringify({
+            name: req.session.name,
+            rank: rank
+          }));
+        }
+        if (rank <= config.numRank) {
+          // broadcast top3
+          getTopPlayers(config.numRank, function (list) {
+            channelClient.lpush('rank', JSON.stringify(list));
+          })
+        }
+        channelClient.lpush(
+          'score',
+          JSON.stringify({
+            name: req.session.name,
+            score: score
+          })
+        );
+        res.json({
+          score: score,
+          rank: rank
+        });
+      }
+  );
 }
 
 /**
@@ -121,6 +163,17 @@ score.incr = function (req, res) {
 score.clear = function (req, res) {
   redisClient.del(keyPlayers);
   res.json(0);
+}
+
+score.rank = function (req, res) {
+  redisClient.multi()
+    .zcard(keyPlayers)
+    .zrank(keyPlayers, req.session.name)
+    .exec(
+      function (err, replies) {
+        res.json(replies[0] - replies[1]);
+      }
+  );
 }
 
 var chat = function (req, res) {
