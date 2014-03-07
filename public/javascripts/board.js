@@ -33,7 +33,8 @@ app.controller('BoardCtrl', function ($scope, $resource) {
               setTimeout((function (player) {
                 return function () {
                   $scope.$apply(function () {
-                    delete player.msg
+                    if (player.msg == obj.msg)
+                      delete player.msg
                   });
                 }
               })($scope.list[i]), 2000);

@@ -4,14 +4,8 @@ function game(res) {
   var canvas = document.createElement("canvas");
   var ctx = canvas.getContext("2d");
 
-  function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  // resize the canvas to fill browser window dynamically
-  window.addEventListener('resize', resizeCanvas, false);
-
-  resizeCanvas();
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
   // canvas.width = 512;
   // canvas.height = 480;
   var canvasCenter = {
@@ -19,6 +13,9 @@ function game(res) {
     y: canvas.height / 2
   }
   document.body.appendChild(canvas);
+  window.addEventListener('touchmove', function (e) {
+    e.preventDefault();
+  })
 
   var edge = 32;
   // Background image
@@ -191,7 +188,9 @@ function game(res) {
   };
 
   // Draw everything
-  var render = function () {
+  var render = function (modifier) {
+    update(modifier);
+
     if (bgReady) {
       ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
     }
@@ -213,7 +212,28 @@ function game(res) {
     ctx.font = "24px Helvetica";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-    ctx.fillText("Goblins caught: " + monstersCaught, edge, edge);
+    ctx.fillText("Score: " + monstersCaught, edge, edge);
+    // Top 3 players
+    var rankTop = edge;
+    top3.forEach(function (player, rank) {
+      ctx.fillStyle = "rgb(230, 230, 230)";
+      var fontSize = 26 - rank * 5;
+      ctx.font = fontSize + "px Helvetica";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "top";
+      var text = player.name + " " + player.score;
+      ctx.fillText(text, canvas.width - edge, rankTop);
+      rankTop += fontSize + 5;
+    });
+
+    // Chat message
+    if (chatMsgAlpha > 0) {
+      ctx.fillStyle = "rgba(210, 210, 210, " + chatMsgAlpha + ")";
+      ctx.font = "italic 24px Arial";
+      // ctx.fillText(chatMsg, edge, canvas.width * 2 - edge * 2);
+      ctx.fillText(chatMsg, edge, canvas.height - edge * 3);
+      chatMsgAlpha -= 0.2 * modifier; // decrease opacity (fade out)
+    }
   };
 
   // The main game loop
@@ -221,8 +241,7 @@ function game(res) {
     var now = Date.now();
     var delta = now - then;
 
-    update(delta / 1000);
-    render();
+    render(delta / 1000);
 
     then = now;
     setTimeout(main, 1);
@@ -232,13 +251,51 @@ function game(res) {
   reset();
   var then = Date.now();
   // setInterval(main, 1); // Execute as fast as possible
-  main();
 
-
+  var chatMsg = '';
+  var chatMsgAlpha = 0;
+  var top3 = [];
   // use channel
   var channel = new Channel(res.chOpts);
   channel.onmessage = function (msg) {
-    var top3 = JSON.parse(msg.data);
-    console.log(top3);
+    var obj = JSON.parse(msg.data);
+    switch (msg.topic) {
+    case 'chat':
+      chatMsg = '[' + obj.name + ']:' + obj.msg;
+      chatMsgAlpha = 1;
+      break
+    case 'rank':
+      top3 = obj;
+      break
+    }
   }
+
+  var textInput = document.createElement('input');
+  textInput.style.position = 'absolute';
+  textInput.style.height = edge + 'px';
+  textInput.style.width = canvas.width + 'px';
+  textInput.style.left = '0px';
+  textInput.style.top = canvas.height - edge + 'px';
+  var textInputUnactive = textInput.style.opacity = 0.3;
+  var textInputActive = 0.9;
+  // textInput.style.fontSize = edge + 'px';
+  textInput.onfocus = function () {
+    this.style.opacity = textInputActive;
+  }
+  textInput.onblur = function () {
+    this.style.opacity = textInputUnactive;
+  }
+  var xhrChat = new XMLHttpRequest;
+  textInput.onkeyup = function (e) {
+    if (e.keyCode == 13) {
+      xhrChat.open('post', '/api/chat', true);
+      xhrChat.setRequestHeader('Content-Type', 'application/json')
+      xhrChat.send(JSON.stringify({
+        msg: textInput.value
+      }));
+      textInput.value = '';
+    }
+  }
+  document.body.appendChild(textInput);
+  main();
 }
