@@ -306,11 +306,14 @@ function game(res) {
   }
 
   var textInput = document.createElement('input');
+  var textInputHeight = 46;
   textInput.style.position = 'absolute';
-  textInput.style.height = edge + 'px';
+  textInput.style.height = textInputHeight + 'px';
   textInput.style.width = canvas.width + 'px';
   textInput.style.left = '0px';
-  textInput.style.top = canvas.height - edge + 'px';
+  textInput.style.top = canvas.height - textInputHeight + 'px';
+  textInput.style.fontSize = '40px';
+  textInput.placeholder = 'talk';
   var textInputUnactive = textInput.style.opacity = 0.3;
   var textInputActive = 0.9;
   // textInput.style.fontSize = edge + 'px';
