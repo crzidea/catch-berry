@@ -54,13 +54,16 @@ function game(res) {
 
   // Game objects
   var hero = {
+    defaultX: canvasCenter.x - edge / 2,
     x: canvasCenter.x - edge / 2,
+    defaultY: canvasCenter.y - edge / 2,
     y: canvasCenter.y - edge / 2,
     turningX: false,
     turningY: false,
-    defaultSpeed: 256,
     acc: 32,
-    speed: 256 // movement in pixels per second
+    defaultSpeed: 256,
+    speed: 256, // movement in pixels per second
+    combo: 0
   };
   var monster = {};
   var trap = {};
@@ -163,24 +166,29 @@ function game(res) {
 
   // Update game objects
   var update = function (modifier) {
-    hero.speed += modifier * hero.acc;
-    // console.log(hero.speed, modifier);
+    if (hero.x != hero.defaultX && hero.y != hero.defaultY) {
+      // accelerat
+      hero.speed += modifier * hero.acc;
+    }
+
     hero.x += vector.x * hero.speed * modifier;
     hero.y += vector.y * hero.speed * modifier;
 
     // Are they touching?
     if (checkCollision(monster)) {
+      hero.combo++;
       score();
       reset();
     }
 
     if (checkCollision(trap)) {
-      hero.x = canvasCenter.x - edge / 2;
-      hero.y = canvasCenter.y - edge / 2;
+      hero.x = hero.defaultX;
+      hero.y = hero.defaultY;
       vector.x = vector.y = 0;
       reset();
       // reset hero speed
       hero.speed = hero.defaultSpeed;
+      hero.combo = 0;
     }
 
     // Are we out?
@@ -225,6 +233,9 @@ function game(res) {
     ctx.textBaseline = "top";
     ctx.fillText("Score: " + playerScore, textPadding, textPadding);
     playerRank && ctx.fillText("Rank: " + playerRank, textPadding, textPadding + 25);
+    if (hero.combo > 1)
+      ctx.fillText("Combo: " + hero.combo, textPadding, textPadding + 50);
+
     // Top 3 players
     var rankTop = textPadding;
     top3.forEach(function (player, rank) {
