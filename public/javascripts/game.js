@@ -19,7 +19,7 @@ function game(res) {
     e.preventDefault();
   })
 
-  var edge = 32;
+  var edge = 64;
   // Background image
   var bgReady = false;
   var bgImage = new Image();
@@ -54,10 +54,12 @@ function game(res) {
 
   // Game objects
   var hero = {
-    x: canvasCenter.x,
-    y: canvasCenter.y,
+    x: canvasCenter.x - edge / 2,
+    y: canvasCenter.y - edge / 2,
     turningX: false,
     turningY: false,
+    defaultSpeed: 256,
+    acc: 32,
     speed: 256 // movement in pixels per second
   };
   var monster = {};
@@ -118,8 +120,8 @@ function game(res) {
   var reset = function () {
 
     // Throw the monster somewhere on the screen randomly
-    monster.x = 64 + (Math.random() * (canvas.width - 160));
-    monster.y = 64 + (Math.random() * (canvas.height - 160));
+    monster.x = edge + (Math.random() * (canvas.width - edge * 3));
+    monster.y = edge + (Math.random() * (canvas.height - edge * 3));
 
     if (checkCollision(monster)) {
       return reset();
@@ -161,6 +163,8 @@ function game(res) {
 
   // Update game objects
   var update = function (modifier) {
+    hero.speed += modifier * hero.acc;
+    // console.log(hero.speed, modifier);
     hero.x += vector.x * hero.speed * modifier;
     hero.y += vector.y * hero.speed * modifier;
 
@@ -171,26 +175,29 @@ function game(res) {
     }
 
     if (checkCollision(trap)) {
-      hero.x = canvasCenter.x;
-      hero.y = canvasCenter.y;
+      hero.x = canvasCenter.x - edge / 2;
+      hero.y = canvasCenter.y - edge / 2;
       vector.x = vector.y = 0;
       reset();
+      // reset hero speed
+      hero.speed = hero.defaultSpeed;
     }
 
     // Are we out?
-    if (hero.x + edge * 2 >= canvas.width) {
+    if (hero.x + edge >= canvas.width) {
       vector.x = -1;
-    } else if (hero.x - edge <= 0) {
+    } else if (hero.x <= 0) {
       vector.x = 1;
     }
-    if (hero.y + edge * 2 >= canvas.height) {
+    if (hero.y + edge >= canvas.height) {
       vector.y = -1;
-    } else if (hero.y - edge <= 0) {
+    } else if (hero.y <= 0) {
       vector.y = 1;
     }
 
   };
 
+  var textPadding = 20;
   // Draw everything
   var render = function (modifier) {
     update(modifier);
@@ -216,10 +223,10 @@ function game(res) {
     ctx.font = "24px Helvetica";
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-    ctx.fillText("Score: " + playerScore, edge, edge);
-    playerRank && ctx.fillText("Rank: " + playerRank, edge, edge * 2);
+    ctx.fillText("Score: " + playerScore, textPadding, textPadding);
+    playerRank && ctx.fillText("Rank: " + playerRank, textPadding, textPadding + 25);
     // Top 3 players
-    var rankTop = edge;
+    var rankTop = textPadding;
     top3.forEach(function (player, rank) {
       ctx.fillStyle = "rgb(230, 230, 230)";
       var fontSize = 26 - rank * 5;
@@ -227,7 +234,7 @@ function game(res) {
       ctx.textAlign = "right";
       ctx.textBaseline = "top";
       var text = player.name + " " + player.score;
-      ctx.fillText(text, canvas.width - edge, rankTop);
+      ctx.fillText(text, canvas.width - textPadding, rankTop);
       rankTop += fontSize + 5;
     });
 
@@ -236,7 +243,7 @@ function game(res) {
       ctx.fillStyle = "rgba(210, 210, 210, " + chatMsgAlpha + ")";
       ctx.textAlign = "left";
       ctx.font = "italic 24px Arial";
-      ctx.fillText(chatMsg, edge, canvas.height - edge * 3);
+      ctx.fillText(chatMsg, textPadding, canvas.height - 90);
       chatMsgAlpha -= 0.2 * modifier; // decrease opacity (fade out)
     }
 
